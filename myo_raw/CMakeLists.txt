@@ -43,6 +43,7 @@ find_package(catkin REQUIRED rospy roscpp std_msgs geometry_msgs message_generat
 add_message_files(
   FILES
   EMGData.msg
+  IMUData.msg
   Gesture.msg
   MyoArm.msg
 )

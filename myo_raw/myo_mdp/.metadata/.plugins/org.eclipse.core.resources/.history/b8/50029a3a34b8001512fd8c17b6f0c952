@@ -1,0 +1,26 @@
+'''
+Created on Jan 11, 2016
+
+@author: ymeng
+'''
+
+from sklearn.neighbors import KNeighborsClassifier
+import numpy as np
+
+class SignalClassifier(KNeighborsClassifier):
+    '''
+    classdocs
+    '''
+
+    def __init__(self, n_neighbors=5, trainingFile=None):
+        '''
+        Constructor
+        '''
+        super(SignalClassifier, self).__init__(n_neighbors=n_neighbors)
+        if trainingFile:
+            self.train(trainingFile)
+    
+    def train(self, trainingFile):
+        my_data = np.genfromtxt(trainigFile, delimiter=',')
+        
+        

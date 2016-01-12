@@ -1,0 +1,4 @@
+MODULES_MANAGER_V2
+__init__|/home/ymeng/jade/myo/src/myo_raw/myo_mdp/myo_mdp/__init__.py
+build_mdp|/home/ymeng/jade/myo/src/myo_raw/myo_mdp/myo_mdp/build_mdp.py
+classifier|/home/ymeng/jade/myo/src/myo_raw/myo_mdp/myo_mdp/classifier.py

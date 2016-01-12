@@ -1,0 +1,19 @@
+'''
+Created on Jan 11, 2016
+
+@author: ymeng
+'''
+
+from sklearn.neighbors import KNeighborsClassifier
+
+class SignalClassifier(object):
+    '''
+    classdocs
+    '''
+
+
+    def __init__(self, params):
+        '''
+        Constructor
+        '''
+        self.

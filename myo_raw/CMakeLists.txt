@@ -43,9 +43,9 @@ find_package(catkin REQUIRED rospy roscpp std_msgs geometry_msgs message_generat
 add_message_files(
   FILES
   EMGData.msg
-  IMUData.msg
   Gesture.msg
   MyoArm.msg
+  IMUData.msg
 )
 
 
@@ -124,6 +124,8 @@ install(PROGRAMS
   scripts/myo_node.py
   scripts/myo_classify.py
   scripts/myo_plotter.py
+  scripts/myo_demo.py
+  scripts/myo_state.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

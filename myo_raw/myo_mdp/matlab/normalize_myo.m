@@ -19,8 +19,10 @@ EMG = (EMG-EMG_min)/(EMG_max-EMG_min+1);
 
 % GYRO is directional, can be pos or neg
 % but the absolute values are about symmetric
-GYRO_max = max(max(GYRO));
+%GYRO_max = max(max(GYRO));
+GYRO_max = 500
 GYRO = GYRO/GYRO_max;
+
 
 % range is -180~180 degrees
 ORIE = ORIE/180;

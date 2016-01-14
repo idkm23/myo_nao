@@ -1,3 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">&#x0A;<refactoring comment="Delete resource &apos;myo_mdp&apos;" deleteContents="false" description="Delete resource &apos;myo_mdp&apos;" element1="/myo_mdp" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1452205110764"/>&#x0A;<refactoring comment="Delete resource &apos;myo_mdp/myo_mdp&apos;" deleteContents="false" description="Delete resource &apos;myo_mdp/myo_mdp&apos;" element1="/myo_mdp/myo_mdp" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1452205432101"/>
-</session>

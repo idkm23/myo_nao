@@ -44,6 +44,8 @@ class MyoNode(object):
         self.m.add_raw_pose_handler(self.__on_raw_pose)
         self.m.add_arm_handler(self.__on_arm)
 
+        self.baseRot = None 
+    
     def disconnect(self):
         self.m.disconnect()
 
@@ -71,8 +73,13 @@ class MyoNode(object):
                                angular_velocity=Vector3(x=gyro[0], y=gyro[1], z=gyro[2]),
                                linear_acceleration=Vector3(x=acc[0]/MYOHW_ACCELEROMETER_SCALE, y=acc[1]/MYOHW_ACCELEROMETER_SCALE, z=acc[2]/MYOHW_ACCELEROMETER_SCALE)
                                                       )
-        # need to switch the yaw and the roll for some reason
-        rotated_quat = tf.transformations.quaternion_from_euler(euler[2], euler[1], euler[0])
+
+        if self.baseRot == None:
+            self.baseRot = euler[0]
+                
+
+        # need to switch the yaw and the roll for some reason   2    1     0
+        rotated_quat = tf.transformations.quaternion_from_euler(-euler[2], euler[1], -euler[0] + self.baseRot)
         self.pub_ort.publish(Quaternion(x=rotated_quat[0], 
                                                     y=rotated_quat[1], 
                                                     z=rotated_quat[2], 

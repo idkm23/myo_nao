@@ -169,6 +169,8 @@ class BT(object):
 
 class MyoRaw(object):
     '''Implements the Myo-specific communication protocol.'''
+    in_use_tty = []
+    last_packet = None
 
     def __init__(self, tty=None):
         if tty is None:
@@ -182,14 +184,23 @@ class MyoRaw(object):
         self.imu_handlers = []
         self.arm_handlers = []
         self.pose_handlers = []
+        self.device_name = ""
 
     def detect_tty(self):
         for p in comports():
-            if re.search(r'PID=2458:0*1', p[2]):
+            if re.search(r'PID=2458:0*1', p[2]) and not MyoRaw.isInUse(p[0]):
                 print('using device:', p[0])
+                MyoRaw.in_use_tty.append(p[0])
                 return p[0]
 
         return None
+
+    @staticmethod
+    def isInUse(tty):
+        for p in MyoRaw.in_use_tty:
+            if tty == p:
+                return True
+        return False
 
     def run(self, timeout=None):
         self.bt.recv_packet(timeout)
@@ -208,8 +219,9 @@ class MyoRaw(object):
             p = self.bt.recv_packet()
             print('scan response:', p)
 
-            if p.payload.endswith(b'\x06\x42\x48\x12\x4A\x7F\x2C\x48\x47\xB9\xDE\x04\xA9\x01\x00\x06\xD5'):
+            if p != MyoRaw.last_packet and p.payload.endswith('\x06\x42\x48\x12\x4A\x7F\x2C\x48\x47\xB9\xDE\x04\xA9\x01\x00\x06\xD5'):
                 addr = list(multiord(p.payload[2:8]))
+                MyoRaw.last_packet = p
                 break
         self.bt.end_scan()
 
@@ -256,7 +268,8 @@ class MyoRaw(object):
 
         else:
             name = self.read_attr(0x03)
-            print('device name: %s' % name.payload)
+            self.device_name = name.payload[5:]
+            print('device name: %s' % self.device_name)
 
             ## enable IMU data
             self.write_attr(0x1d, b'\x01\x00')

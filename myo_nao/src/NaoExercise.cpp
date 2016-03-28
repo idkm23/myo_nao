@@ -153,7 +153,7 @@ private:
 
     ros::NodeHandle n;
     nao_msgs::JointAnglesWithSpeed nao_joint_msg;
-    ros::Subscriber myo_l_sub, myo_u_sub, playback_sub, progress_sub;
+    ros::Subscriber myo_l_sub, myo_u_sub, playback_l_sub, playback_u_sub, progress_sub;
     ros::Publisher joint_pub, playback_trigger, speech_pub;
     ros::ServiceClient stiffness_client, rest_position_client;
 
@@ -199,7 +199,7 @@ void NaoExercise::myo_u_callback(geometry_msgs::Quaternion msg) {
         vec.setY(vec.y());
         vec.setZ(vec.z());
 
-    //    ROS_INFO("{%f, %f, %f}", vec.getX(), vec.getY(), vec.getZ());
+        ROS_INFO("{%f, %f, %f}", vec.getX(), vec.getY(), vec.getZ());
 
         float h = 1;
         
@@ -213,19 +213,17 @@ void NaoExercise::myo_u_callback(geometry_msgs::Quaternion msg) {
         pitch = calcAngle(parallelToPlane, vec);
         yaw = calcAngle(parallelToPlane, down); 
        
-        pitch = -pitch;
-        yaw = -yaw + 1.1f;
+        pitch = pitch * (vec.x() > 0 ? 1 : -1);
 
-    //    ROS_INFO("y_%f p_%f r_%f", yaw, pitch, roll);
+            yaw = -yaw + 1.1f;
+
+        ROS_INFO("y_%f p_%f r_%f", yaw, pitch, roll);
+
         /*
-        if(2*fabs(msg.y*msg.w + msg.x*msg.z) >= 1)
-            ROS_INFO("WAHHHH");
-
         yaw =   atan2((msg.z * msg.w + msg.x * msg.y), 1/2 - (pow(msg.y, 2) + pow(msg.z, 2)) ); 
         pitch = asin(-2*(msg.y*msg.w - msg.x * msg.z)) - 1.24;
         roll = atan2( (msg.y*msg.z + msg.x*msg.w), 1/2 - (pow(msg.z, 2) + pow(msg.w, 2)) );
-
-*/
+        */
 
         nao_joint_msg.joint_angles[3] = yaw;
         nao_joint_msg.joint_angles[4] = pitch;
@@ -246,7 +244,7 @@ void NaoExercise::progress_callback(std_msgs::Float64 progress) {
 }
 
 void NaoExercise::playback_u_callback(geometry_msgs::Quaternion msg) {
-
+    
     myo_u_callback(msg);
 
 }
@@ -303,8 +301,9 @@ void NaoExercise::pubQuat2NaoArm(geometry_msgs::Quaternion msg) {
         yaw = calcAngle(parallelToPlane, down); 
     
         pitch = -pitch + 1.5;
-        yaw = -yaw + 2.5;
-
+        pitch *= 1.3;
+        yaw = -yaw + 2;
+        yaw *= 1.3;
     /*
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
@@ -337,7 +336,7 @@ void NaoExercise::pubQuat2NaoArm(geometry_msgs::Quaternion msg) {
     nao_joint_msg.joint_angles[1] = pitch;
     nao_joint_msg.joint_angles[2] = roll;
 
-    ROS_INFO("y_%f p_%f r_%f", yaw, pitch, roll);
+    //ROS_INFO("y_%f p_%f r_%f", yaw, pitch, roll);
 
     joint_pub.publish(nao_joint_msg);
 
@@ -386,7 +385,8 @@ NaoExercise::NaoExercise() {
     nao_joint_msg.joint_angles[4] = -0.5981317008;
     nao_joint_msg.speed = 0.5;
 
-    playback_sub = n.subscribe<geometry_msgs::Quaternion>("/exercise/playback", 10, &NaoExercise::playback_callback, this);
+    playback_l_sub = n.subscribe<geometry_msgs::Quaternion>("/exercise/l/playback", 10, &NaoExercise::playback_l_callback, this);
+    playback_u_sub = n.subscribe<geometry_msgs::Quaternion>("/exercise/u/playback", 10, &NaoExercise::playback_u_callback, this);
     progress_sub = n.subscribe<std_msgs::Float64>("/exercise/progress", 10, &NaoExercise::progress_callback, this);
     playback_trigger = n.advertise<std_msgs::Empty>("/exercise/playback_trigger", 100);
     joint_pub = n.advertise<nao_msgs::JointAnglesWithSpeed>("/joint_angles", 100);

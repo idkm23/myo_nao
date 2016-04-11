@@ -1,4 +1,4 @@
-#include "NaoExercise.cpp"
+#include "../include/NaoExercise.h"
 #include <unistd.h>
 
 int main(int argc, char** argv) {

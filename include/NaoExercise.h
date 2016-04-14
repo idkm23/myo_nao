@@ -6,6 +6,7 @@
 #include <std_srvs/Empty.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Float64.h>
+#include <std_msgs/Int32.h>
 
 #include <nao_msgs/JointAnglesWithSpeed.h>
 
@@ -15,7 +16,7 @@
 #include <math.h>
 #include "JPCT_Math.h"
 
-enum ProgramStatus {PLAYBACK, EXERCISING, PROMPT, COMPLETE};
+enum ProgramStatus {PLAYBACK, EXERCISING, PROMPT, COMPLETE, LOCKED};
 
 class NaoExercise {
 
@@ -24,8 +25,8 @@ private:
 
     ros::NodeHandle n;
     nao_msgs::JointAnglesWithSpeed nao_joint_msg;
-    ros::Subscriber myo_l_sub, myo_u_sub, playback_l_sub, playback_u_sub, progress_sub;
-    ros::Publisher joint_pub, playback_trigger, speech_pub;
+    ros::Subscriber myo_l_sub, myo_u_sub, playback_l_sub, playback_u_sub, progress_sub, mode_sub;
+    ros::Publisher joint_pub, speech_pub;
     ros::ServiceClient stiffness_client, rest_position_client;
 
     std_msgs::String greeting_msg, yourturn_msg, retry_msg, prompt_msg, complete_msg;
@@ -37,10 +38,14 @@ public:
     void pubQuat2NaoArm(geometry_msgs::Quaternion);
     void myo_l_callback(geometry_msgs::Quaternion);
     void myo_u_callback(geometry_msgs::Quaternion);
+    void mode_callback(std_msgs::Int32);
     void progress_callback(std_msgs::Float64);
     void playback_u_callback(geometry_msgs::Quaternion);
     void playback_l_callback(geometry_msgs::Quaternion);
+    
     void begin();
+    void end();
+    void posture_setup();
 
     ProgramStatus getStatus();
 };

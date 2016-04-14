@@ -57,6 +57,33 @@ void NaoExercise::myo_u_callback(geometry_msgs::Quaternion msg) {
     }
 }
 
+void NaoExercise::mode_callback(std_msgs::Int32 mode) {
+    if(status == LOCKED && mode.data != 3)
+        return;
+    
+    switch(mode.data) {
+        case 0:
+            begin();    
+            break;
+
+        case 1:
+            status = EXERCISING;
+            myo_l_sub = n.subscribe<geometry_msgs::Quaternion>("/myo/l/ort", 10, &NaoExercise::myo_l_callback, this);
+            myo_u_sub = n.subscribe<geometry_msgs::Quaternion>("/myo/u/ort", 10, &NaoExercise::myo_u_callback, this);
+            break;
+
+        case 3: //unlock the program
+            status = EXERCISING;
+            posture_setup();
+            break;
+
+        case 4: //lock the program
+            status = LOCKED;
+            end();
+            break;
+    }
+}
+
 void NaoExercise::progress_callback(std_msgs::Float64 progress) {
     if(status != COMPLETE && progress.data == 1) {
         status = COMPLETE;
@@ -167,10 +194,18 @@ void NaoExercise::pubQuat2NaoArm(geometry_msgs::Quaternion msg) {
     joint_pub.publish(nao_joint_msg);
 }
 
-
 void NaoExercise::begin() {
-    ROS_INFO("in begin");
+    playback_l_sub = n.subscribe<geometry_msgs::Quaternion>("/exercise/l/playback", 10, &NaoExercise::playback_l_callback, this);
+    playback_u_sub = n.subscribe<geometry_msgs::Quaternion>("/exercise/u/playback", 10, &NaoExercise::playback_u_callback, this);
+
+    posture_setup();
+
+    speech_pub.publish(greeting_msg);
     
+    status = PLAYBACK;
+}
+
+void NaoExercise::posture_setup() {
     std_srvs::Empty stiffness_srv;
     if(!stiffness_client.call(stiffness_srv)) {
         ROS_ERROR("failed to call stiffen service");
@@ -182,13 +217,20 @@ void NaoExercise::begin() {
     shoulder_msg.speed = 0.5;
 
     joint_pub.publish(shoulder_msg);
+}
 
-    speech_pub.publish(greeting_msg);
+void NaoExercise::end() {
+    playback_l_sub.shutdown();
+    playback_u_sub.shutdown();
     
-    std_msgs::Empty triggerer;
-    playback_trigger.publish(triggerer);
-    
-    status = PLAYBACK;
+    myo_l_sub.shutdown();
+    myo_u_sub.shutdown();
+
+    std_srvs::Empty rest_srv;
+    if(!rest_position_client.call(rest_srv)) {
+        ROS_ERROR("failed to call rest service");
+    }
+
 }
 
 NaoExercise::NaoExercise() {
@@ -210,14 +252,10 @@ NaoExercise::NaoExercise() {
     nao_joint_msg.joint_angles[4] = -0.5981317008;
     nao_joint_msg.speed = 0.5;
 
-    playback_l_sub = n.subscribe<geometry_msgs::Quaternion>("/exercise/l/playback", 10, &NaoExercise::playback_l_callback, this);
-    playback_u_sub = n.subscribe<geometry_msgs::Quaternion>("/exercise/u/playback", 10, &NaoExercise::playback_u_callback, this);
+    mode_sub = n.subscribe<std_msgs::Int32>("/exercise/mode", 10, &NaoExercise::mode_callback, this);
     progress_sub = n.subscribe<std_msgs::Float64>("/exercise/progress", 10, &NaoExercise::progress_callback, this);
-    playback_trigger = n.advertise<std_msgs::Empty>("/exercise/playback_trigger", 100);
     joint_pub = n.advertise<nao_msgs::JointAnglesWithSpeed>("/joint_angles", 100);
     speech_pub = n.advertise<std_msgs::String>("/speech", 100);
     stiffness_client = n.serviceClient<std_srvs::Empty>("/body_stiffness/enable");
-    rest_position_client = n.serviceClient<std_srvs::Empty>("/nao_robot/pose/rest");
-    
-    begin();
+    rest_position_client = n.serviceClient<std_srvs::Empty>("/rest");
 }

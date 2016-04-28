@@ -29,13 +29,9 @@ void NaoExercise::myo_u_callback(geometry_msgs::Quaternion msg) {
 
         float h = 1;
         
-     //   ROS_INFO("%f", h);
-    
         tf::Vector3 parallelToPlane(0, vec.getY(), -(sqrt(pow(h, 2) - pow(vec.getY(), 2))) );
         double roll, pitch, yaw;
     
-      //  ROS_INFO("{%f, %f, %f}", parallelToPlane.getX(), parallelToPlane.getY(), parallelToPlane.getZ());
-        
         pitch = JPCT_Math::calcAngle(parallelToPlane, vec);
         yaw = JPCT_Math::calcAngle(parallelToPlane, down); 
        
@@ -44,12 +40,6 @@ void NaoExercise::myo_u_callback(geometry_msgs::Quaternion msg) {
         yaw = -yaw + 1.1f;
 
         ROS_INFO("y_%f p_%f r_%f", yaw, pitch, roll);
-
-        /*
-        yaw =   atan2((msg.z * msg.w + msg.x * msg.y), 1/2 - (pow(msg.y, 2) + pow(msg.z, 2)) ); 
-        pitch = asin(-2*(msg.y*msg.w - msg.x * msg.z)) - 1.24;
-        roll = atan2( (msg.y*msg.z + msg.x*msg.w), 1/2 - (pow(msg.z, 2) + pow(msg.w, 2)) );
-        */
 
         nao_joint_msg.joint_angles[3] = yaw;
         nao_joint_msg.joint_angles[4] = pitch;
@@ -139,17 +129,11 @@ void NaoExercise::pubQuat2NaoArm(geometry_msgs::Quaternion msg) {
     tf::Vector3 vec(0, 1, 0), origin, down(0, 1, 0);
     vec = JPCT_Math::rotate(vec, m);
 
-    //ROS_INFO("{%f, %f, %f}", vec.getX(), vec.getY(), vec.getZ());
-
     float h = 1;
-        
-     //   ROS_INFO("%f", h);
     
     tf::Vector3 parallelToPlane(0, vec.getY(), -(sqrt(pow(h, 2) - pow(vec.getY(), 2))) );
     double roll, pitch, yaw;
 
-    //ROS_INFO("{%f, %f, %f}", parallelToPlane.getX(), parallelToPlane.getY(), parallelToPlane.getZ());
-    
     pitch = JPCT_Math::calcAngle(parallelToPlane, vec);
     yaw = JPCT_Math::calcAngle(parallelToPlane, down); 
 
@@ -157,39 +141,10 @@ void NaoExercise::pubQuat2NaoArm(geometry_msgs::Quaternion msg) {
     pitch *= 1.3;
     yaw = -yaw + 2;
     yaw *= 1.3;
-    /*
-    double roll, pitch, yaw;
-    m.getRPY(roll, pitch, yaw);
-
-    yaw = -yaw;
-    roll = -M_PI*.4 -roll;
-
-    if(yaw > 119.5 * M_PI/180) 
-        yaw = 119.5 * M_PI/180;
-    else if (yaw < 10 * M_PI/180) {
-        if(fabs(10 * M_PI/180 - yaw) < fabs(-M_PI - yaw))
-            yaw = 10 * M_PI/180;
-        else
-            yaw = 119.5 * M_PI/180; 
-    }
-
-    if(pitch > 88.5 * M_PI/180)
-        pitch = 88.5 * M_PI/180;
-    if(pitch < 2 * M_PI/180)
-        pitch = 2 * M_PI/180;
-
-    if(roll > 104.5 * M_PI/180)
-       roll = 104.5 * M_PI/180;
-    else if(roll < -104.5 * M_PI/180)
-       roll = -104.5 * M_PI/180; 
-
-*/
-
+    
     nao_joint_msg.joint_angles[0] = yaw;
     nao_joint_msg.joint_angles[1] = pitch;
     nao_joint_msg.joint_angles[2] = roll;
-
-    //ROS_INFO("y_%f p_%f r_%f", yaw, pitch, roll);
 
     joint_pub.publish(nao_joint_msg);
 }
@@ -207,7 +162,7 @@ void NaoExercise::begin() {
 
 void NaoExercise::posture_setup() {
     std_srvs::Empty stiffness_srv;
-    if(!stiffness_client.call(stiffness_srv)) {
+    if(!stiffness_enable_client.call(stiffness_srv)) {
         ROS_ERROR("failed to call stiffen service");
     }
    
@@ -226,11 +181,20 @@ void NaoExercise::end() {
     myo_l_sub.shutdown();
     myo_u_sub.shutdown();
 
-    std_srvs::Empty rest_srv;
-    if(!rest_position_client.call(rest_srv)) {
-        ROS_ERROR("failed to call rest service");
-    }
+    nao_joint_msg.joint_angles[0] = 0;
+    nao_joint_msg.joint_angles[1] = 0;
+    nao_joint_msg.joint_angles[2] = 0;
+    nao_joint_msg.joint_angles[3] = M_PI/2;
+    nao_joint_msg.joint_angles[4] = 0;
+    
+    joint_pub.publish(nao_joint_msg);
 
+    sleep(0.5);
+
+    std_srvs::Empty stiffness_srv;
+    if(!stiffness_disable_client.call(stiffness_srv)) {
+        ROS_ERROR("failed to call stiffen service");
+    }
 }
 
 NaoExercise::NaoExercise() {
@@ -256,6 +220,6 @@ NaoExercise::NaoExercise() {
     progress_sub = n.subscribe<std_msgs::Float64>("/exercise/progress", 10, &NaoExercise::progress_callback, this);
     joint_pub = n.advertise<nao_msgs::JointAnglesWithSpeed>("/joint_angles", 100);
     speech_pub = n.advertise<std_msgs::String>("/speech", 100);
-    stiffness_client = n.serviceClient<std_srvs::Empty>("/body_stiffness/enable");
-    rest_position_client = n.serviceClient<std_srvs::Empty>("/rest");
+    stiffness_enable_client = n.serviceClient<std_srvs::Empty>("/body_stiffness/enable");
+    stiffness_disable_client = n.serviceClient<std_srvs::Empty>("/body_stiffness/disable");
 }

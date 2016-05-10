@@ -57,6 +57,7 @@ void NaoExercise::mode_callback(std_msgs::Int32 mode) {
             break;
 
         case 1:
+        case 2:
             status = EXERCISING;
             myo_l_sub = n.subscribe<geometry_msgs::Quaternion>("/myo/l/ort", 10, &NaoExercise::myo_l_callback, this);
             myo_u_sub = n.subscribe<geometry_msgs::Quaternion>("/myo/u/ort", 10, &NaoExercise::myo_u_callback, this);
